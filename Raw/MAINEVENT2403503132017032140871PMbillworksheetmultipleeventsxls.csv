@@ -1,0 +1,13 @@
+"Main Event Caterers - Bill Worksheet Multiple Events Detailed"
+
+"Business Unit: all"
+"Date Range: 2/11/2017 - 4/12/2017"
+"Event Status: Definite, Tentative"
+"AE: all"
+"Markup = ((internal-actual)/actual)*100"
+"Margin = (internal-actual)*100/internal"
+"Note: Results only for events where the Bill is in the INV, EXP or ADJ status" 
+"Note: Difference = (Proposed - Internal) + Discount"
+
+CIS,Customer,Guests,AE,Event Date,Event Type,Bill Type,Bill Item,Proposed,Internal,Discount,Difference,Actual Cost,Margin,Markup
+ , , , , , , , ,0,0,0,0,0
