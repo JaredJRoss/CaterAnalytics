@@ -1,3 +1,4 @@
 from distutils.core import setup
 import py2exe
-setup(console=['.\Cateringpy.py'])
+
+setup(console=['Cateringpy.py'])
