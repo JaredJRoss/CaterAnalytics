@@ -15,13 +15,14 @@ def openFile(*args):
     df = pd.read_csv(location)
     for i, r in df.iterrows():
         if not pd.isnull(r[2]):
-            print(r[2])
+            print(df)
             df.drop(df.index[:i],inplace = True)
             df = df.reset_index(drop=True)
             df.columns = df.iloc[0]
             df.drop(df.index[0], inplace = True)
             df = df.reset_index(drop=True)
             df.drop(df.index[2],inplace = True)
+            print(df['Event Date'])
             break
 
     df.to_csv('inq.csv')
