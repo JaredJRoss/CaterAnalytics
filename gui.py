@@ -96,10 +96,14 @@ def openFile(*args):
         #drop empty months
         df = df.dropna(subset=['Month'])
         year = 0
+        #goes through the dataframe
         for i, r in df.iterrows():
+            #checks if the year tab is null and if not set that as the current year
             if not math.isnan(r['Year']):
                 year = r['Year']
+            #makes the month tab hold both the month and year
             df.loc[i,'Month'] = r['Month']+" "+str(year)
+        #drops the year tab since month keeps track of it
         df = df.drop('Year', axis=1)
         df_old =  pd.read_csv('Tasting.csv')
         df_old  = df_old.drop('Unnamed: 0', axis = 1)
