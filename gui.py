@@ -9,7 +9,8 @@ from tkinter.ttk import *
 import re
 import math
 import os.path
-
+import datetime as dt
+from datetime import datetime
 
 #finds where the headers end for the report
 def find_start(df):
@@ -111,6 +112,9 @@ def openFile(*args):
         df.to_csv('Tasting.csv')
         print(df)
 
+
+
+
 root = Tk()
 root.title("Catering Analytics")
 
@@ -136,5 +140,88 @@ label2.image = photo2 #reference!
 label2.grid(column = 0,row = 1,  padx = 5, pady = 5)
 
 ttk.Button(mainframe, text="Open File", command=openFile).grid(column=0, row=3, sticky=S)
+
+var = StringVar(mainframe)
+start = StringVar()
+end = StringVar()
+
+var.set("one") # initial value
+option = OptionMenu(mainframe, var, 'Choose a Metric to Calculate',"Operations", "Culinary", "Staffing")
+option.grid()
+
+label1 = ttk.Label( mainframe, text="From")
+E1 = ttk.Entry(mainframe,textvariable=start)
+
+label2 = ttk.Label( mainframe, text="To")
+E2 = ttk.Entry(mainframe, textvariable= end)
+
+
+label1.grid()
+E1.grid()
+label2.grid()
+E2.grid()
+#creates metrics based off dropdown selection
+def CreateMetrics():
+    if var.get() == "Operations":
+        #read in project revenue csv we created
+        df = pd.read_csv('PMRevProj.csv')
+        start_date = datetime.strptime(start.get(),'%m/%d/%Y')
+        end_date = datetime.strptime(end.get(),'%m/%d/%Y')
+        #makes the eventdate a datetime object so we can manipulate it
+        df['Event Date'] = pd.to_datetime(df['Event Date'])
+        df['Subtotal'] = df['Subtotal'].astype(float)
+        #gets event $ executed from dates in textbox
+        EventDollars = df[df['Event Date'].between(start_date,end_date)]['Subtotal'].sum()
+        #gets event # executed from dates in textbox
+        EventCount = df[df['Event Date'].between(start_date,end_date)]['Event#'].count()
+        #gets events covers
+        Cover = df[df['Event Date'].between(start_date,end_date)]['Adult Guests'].sum()
+        #gets avg check
+        AvgCheck = EventDollars/Cover
+    elif var.get() == "Culinary":
+        print('culinary')
+    elif var.get() == "Staffing":
+        #read in both csv files
+        df_rev = pd.read_csv('PMRevProj.csv')
+        df_staffing = pd.read_csv('PMpostSched.csv')
+        start_date = datetime.strptime(start.get(),'%m/%d/%Y')
+        end_date = datetime.strptime(end.get(),'%m/%d/%Y')
+        #turns event date in both into date time objects
+        df_rev['Event Date'] = pd.to_datetime(df_rev['Event Date'])
+        df_staffing['Event Date'] = pd.to_datetime(df_staffing['Event Date'])
+        # gets staff charges
+        staffCharges  = df_rev[df_rev['Event Date'].between(start_date,end_date)]['Event Personnel'].sum()
+        #narrows the dataframe to only include dates we want
+        df_staffing = df_staffing[df_staffing['Event Date'].between(start_date,end_date)]
+        #gets rid of any position type we dont want
+        df_staffing = df_staffing[(df_staffing['Position Type'] != 'Mkt Event + Tasting Butler') & (df_staffing['Position Type'] != 'Production Kitchen at MEC')]
+        print(df_staffing)
+        #this is because floats cant have , for 1,000 it must be 1000
+        df_staffing['Amount'] = df_staffing['Amount'].str.replace(',','')
+        df_staffing['Amount'] = df_staffing['Amount'].astype(float)
+        staffCosts = df_staffing['Amount'].sum()
+        # gets money charged to customers
+        EventDollars = df_rev[df_rev['Event Date'].between(start_date,end_date)]['Subtotal'].sum()
+        print('looking at')
+        print('staff Costs')
+        print(staffCosts)
+        print('Event Dollars')
+        print(EventDollars)
+        print('staff Charges')
+        print(staffCharges)
+        staffProfit = EventDollars - staffCosts
+        percent = 100*(staffCharges/staffProfit)
+        print('Results')
+        print('staff profit')
+        print(staffProfit)
+        print('percent')
+        print(percent)
+    else:
+        print('none selected')
+
+
+
+ttk.Button(mainframe, text="Get Metrics", command=CreateMetrics).grid(column=1, row=3, sticky=S)
+
 
 root.mainloop()
