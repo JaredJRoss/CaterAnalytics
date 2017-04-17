@@ -11,6 +11,8 @@ import math
 import os.path
 import datetime as dt
 from datetime import datetime
+from dateutil import parser
+
 
 #finds where the headers end for the report
 def find_start(df):
@@ -23,9 +25,52 @@ def openFile(*args):
     filename = fd.askopenfilename()
     location = str(filename)
     # convert the contents of that file in a df
-    print(re.search(r'PMrevproj',str(filename)))
+    print(re.search(r'mecreveproj',str(filename)))
     #Sees if file is Projected Revenue File
-    if re.search(r'PMrevproj',str(filename)) is not None:
+    if re.search(r'mecreveproj',str(filename)) is not None:
+        #have to create 74 columns to reflect columns in data set so everything is filled correctly
+        df = pd.read_csv(location,names =['Unnamed 0','Unnamed 1','Unnamed 2','Unnamed 3','Unnamed 4'\
+        ,'Unnamed 5','Unnamed 6','Unnamed 7','Unnamed 8','Unnamed 9','Unnamed 10',\
+        'Unnamed 11','Unnamed 12','Unnamed 13','Unnamed 14','Unnamed 15'\
+        ,'Unnamed 16','Unnamed 17','Unnamed 18','Unnamed 19','Unnamed 20','Unnamed 21',
+        'Unnamed 23','Unnamed 24','Unnamed 25','Unnamed 26','Unnamed 27'\
+        ,'Unnamed 28','Unnamed 29','Unnamed 30','Unnamed 31','Unnamed 32','Unnamed 33',\
+        'Unnamed 34','Unnamed 35','Unnamed 36','Unnamed 37','Unnamed 38',\
+        'Unnamed 39','Unnamed 40','Unnamed 41','Unnamed 42','Unnamed 43','Unnamed 44',\
+        'Test 0','Test 1','Test 2','Test 3','Test 4'\
+        ,'Test 5','Test 6','Test 7','Test 8','Test 9','Test 10',\
+        'Test 11','Test 12','Test 13','Test 14','Test 15'\
+        ,'Test 16','Test 17','Test 18','Test 19','Test 20','Test 21',
+        'Test 23','Test 24','Test 25','Test 26','Test 27'\
+        ,'Test 28','Test 29','Last'])
+        #finds where the data starts and drops the header rows
+        df.drop(df.index[:find_start(df)],inplace= True)
+        df = df.reset_index(drop=True)
+        df.columns = df.iloc[0]
+        #sets the column names in the dataframe and then drops them
+        df.drop(df.index[0], inplace = True)
+        df = df.reset_index(drop=True)
+        #drops row with definitive
+        df.drop(df.index[0],inplace = True)
+        #finds all tentative events and drops them
+        index = df[df['Event Date'] == 'FOR TENTATIVE EVENTS'].index[0]
+        df.drop(df.index[index-2:],inplace = True)
+        df[' Subtotal'].fillna(0,inplace=True)
+        df['Adult Guests'].fillna(0,inplace = True)
+        #makes event date a datetime abject so it can be easily manipulated
+        df['Event Date'] = pd.to_datetime(df['Event Date'])
+        df.drop('Discount',axis=1,inplace=True)
+        #loads data that is already available
+        df_old =  pd.read_csv('PMRevProj.csv')
+        df_old['Event Date'] = pd.to_datetime(df_old['Event Date'])
+        df_old  = df_old.drop('Unnamed: 0', axis = 1)
+        print(df_old.columns)
+        print(df.columns)
+        #Performs a union on all the data so new data is added without adding data already in the dataset
+        df = df.combine_first(df_old)
+        df.to_csv('PMRevProj.csv')
+    #sees if file is Post Schedule report
+    elif re.search(r'PMrevproj',str(filename)) is not None:
         #have to create 74 columns to reflect columns in data set so everything is filled correctly
         df = pd.read_csv(location,names =['Unnamed 0','Unnamed 1','Unnamed 2','Unnamed 3','Unnamed 4'\
         ,'Unnamed 5','Unnamed 6','Unnamed 7','Unnamed 8','Unnamed 9','Unnamed 10',\
@@ -63,7 +108,7 @@ def openFile(*args):
         #Performs a union on all the data so new data is added without adding data already in the dataset
         df = df.combine_first(df_old)
         print(df)
-        df.to_csv('PMRevProj.csv')
+        df.to_csv('PMRevProjDisc.csv')
     #sees if file is Post Schedule report
     elif re.search(r'PMpostsched',str(filename))is not None:
         #have to create  columns to reflect columns in data set so everything is filled correctly
@@ -165,27 +210,28 @@ def CreateMetrics():
     if var.get() == "Operations":
         #read in project revenue csv we created
         df = pd.read_csv('PMRevProj.csv')
-        start_date = datetime.strptime(start.get(),'%m/%d/%Y')
-        end_date = datetime.strptime(end.get(),'%m/%d/%Y')
+        start_date = parser.parse(start.get())
+        end_date = parser.parse(end.get())
         #makes the eventdate a datetime object so we can manipulate it
         df['Event Date'] = pd.to_datetime(df['Event Date'])
-        df['Subtotal'] = df['Subtotal'].astype(float)
+        df[' Subtotal'] = df[' Subtotal'].astype(float)
         #gets event $ executed from dates in textbox
-        EventDollars = df[df['Event Date'].between(start_date,end_date)]['Subtotal'].sum()
+        EventDollars = df[df['Event Date'].between(start_date,end_date)][' Subtotal'].sum()
         #gets event # executed from dates in textbox
-        EventCount = df[df['Event Date'].between(start_date,end_date)]['Event#'].count()
+        EventCount = df[df['Event Date'].between(start_date,end_date)]['Event Date'].count()
         #gets events covers
         Cover = df[df['Event Date'].between(start_date,end_date)]['Adult Guests'].sum()
         #gets avg check
         AvgCheck = EventDollars/Cover
+        print(AvgCheck)
     elif var.get() == "Culinary":
         print('culinary')
     elif var.get() == "Staffing":
         #read in both csv files
-        df_rev = pd.read_csv('PMRevProj.csv')
+        df_rev = pd.read_csv('PMRevProjDisc.csv')
         df_staffing = pd.read_csv('PMpostSched.csv')
-        start_date = datetime.strptime(start.get(),'%m/%d/%Y')
-        end_date = datetime.strptime(end.get(),'%m/%d/%Y')
+        start_date = parser.parse(start.get())
+        end_date = parser.parse(end.get())
         #turns event date in both into date time objects
         df_rev['Event Date'] = pd.to_datetime(df_rev['Event Date'])
         df_staffing['Event Date'] = pd.to_datetime(df_staffing['Event Date'])
@@ -201,16 +247,13 @@ def CreateMetrics():
         df_staffing['Amount'] = df_staffing['Amount'].astype(float)
         staffCosts = df_staffing['Amount'].sum()
         # gets money charged to customers
-        EventDollars = df_rev[df_rev['Event Date'].between(start_date,end_date)]['Subtotal'].sum()
         print('looking at')
         print('staff Costs')
         print(staffCosts)
-        print('Event Dollars')
-        print(EventDollars)
         print('staff Charges')
         print(staffCharges)
-        staffProfit = EventDollars - staffCosts
-        percent = 100*(staffCharges/staffProfit)
+        staffProfit = staffCharges - staffCosts
+        percent = 100*(staffProfit/staffCharges)
         print('Results')
         print('staff profit')
         print(staffProfit)
