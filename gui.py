@@ -146,16 +146,15 @@ def openFile(*args):
         for i, r in df.iterrows():
             #checks if the year tab is null and if not set that as the current year
             if not math.isnan(r['Year']):
-                year = r['Year']
+                temp = int(str(r['Year'])[:4])
             #makes the month tab hold both the month and year
-            df.loc[i,'Month'] = r['Month']+" "+str(year)
+            df.loc[i,'Month'] = parser.parse(r['Month']).replace(year = temp, day = 1)
         #drops the year tab since month keeps track of it
         df = df.drop('Year', axis=1)
         df_old =  pd.read_csv('Tasting.csv')
         df_old  = df_old.drop('Unnamed: 0', axis = 1)
         df = df.combine_first(df_old)
         df.to_csv('Tasting.csv')
-        print(df)
 
 
 
@@ -225,7 +224,21 @@ def CreateMetrics():
         AvgCheck = EventDollars/Cover
         print(AvgCheck)
     elif var.get() == "Culinary":
-        print('culinary')
+        df_culin = pd.read_csv('Tasting.csv')
+        df_culin['Month'] = pd.to_datetime(df_culin['Month'])
+        now = datetime.now()
+        print(now.month-2)
+        print(now.year)
+        temp = df_culin[df_culin['Month'].dt.year==now.year]
+        curr = temp[temp['Month'].between(now.replace(month = now.month-3 ),now)]
+        print(curr)
+        signed = curr['Unsign Number'].sum()
+        lost = curr['Unsign Signed'].sum()
+        tentative = curr['Unsign Tentative'].sum()
+        lost_tent = lost+(tentative*.744)
+        print(signed)
+        print(lost_tent)
+        print(100*(lost_tent/signed))
     elif var.get() == "Staffing":
         #read in both csv files
         df_rev = pd.read_csv('PMRevProjDisc.csv')
@@ -259,6 +272,7 @@ def CreateMetrics():
         print(staffProfit)
         print('percent')
         print(percent)
+    elif var.get() == "Sales":
     else:
         print('none selected')
 
