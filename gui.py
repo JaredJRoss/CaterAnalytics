@@ -1,6 +1,5 @@
 from tkinter import *
-from tkinter import filedialog as fd
-from tkinter import ttk
+from tkinter import filedialog as fd, ttk
 import pandas as pd
 from pandas import DataFrame, read_csv
 import matplotlib
@@ -10,22 +9,35 @@ import re
 import math
 import os.path
 import datetime as dt
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
-
+import calendar
+import glob
 
 #finds where the headers end for the report
 def find_start(df):
     for i, r in df.iterrows():
         if not pd.isnull(r[1]):
             return i
+#Makes the collumns the correct name
+def resetColName(df):
+        #finds where the data starts and drops the header rows
+        df.drop(df.index[:find_start(df)],inplace= True)
+        df = df.reset_index(drop=True)
+        df.columns = df.iloc[0]
+        #sets the column names in the dataframe and then drops them
+        df.drop(df.index[0], inplace = True)
+        df = df.reset_index(drop=True)
+        #drops row with definitive
+        df.drop(df.index[0],inplace = True)
+        return df
 
 def openFile(*args):
     # opens a filedialog
     filename = fd.askopenfilename()
     location = str(filename)
     # convert the contents of that file in a df
-    print(re.search(r'mecreveproj',str(filename)))
+    print(location)
     #Sees if file is Projected Revenue File
     if re.search(r'mecreveproj',str(filename)) is not None:
         #have to create 74 columns to reflect columns in data set so everything is filled correctly
@@ -43,15 +55,7 @@ def openFile(*args):
         ,'Test 16','Test 17','Test 18','Test 19','Test 20','Test 21',
         'Test 23','Test 24','Test 25','Test 26','Test 27'\
         ,'Test 28','Test 29','Last'])
-        #finds where the data starts and drops the header rows
-        df.drop(df.index[:find_start(df)],inplace= True)
-        df = df.reset_index(drop=True)
-        df.columns = df.iloc[0]
-        #sets the column names in the dataframe and then drops them
-        df.drop(df.index[0], inplace = True)
-        df = df.reset_index(drop=True)
-        #drops row with definitive
-        df.drop(df.index[0],inplace = True)
+        df = resetColName(df)
         #finds all tentative events and drops them
         index = df[df['Event Date'] == 'FOR TENTATIVE EVENTS'].index[0]
         df.drop(df.index[index-2:],inplace = True)
@@ -86,15 +90,7 @@ def openFile(*args):
         ,'Test 16','Test 17','Test 18','Test 19','Test 20','Test 21',
         'Test 23','Test 24','Test 25','Test 26','Test 27'\
         ,'Test 28','Test 29','Last'])
-        #finds where the data starts and drops the header rows
-        df.drop(df.index[:find_start(df)],inplace= True)
-        df = df.reset_index(drop=True)
-        df.columns = df.iloc[0]
-        #sets the column names in the dataframe and then drops them
-        df.drop(df.index[0], inplace = True)
-        df = df.reset_index(drop=True)
-        #drops row with definitive
-        df.drop(df.index[0],inplace = True)
+        df = resetColName(df)
         #finds all tentative events and drops them
         index = df[df['Event Date'] == 'FOR TENTATIVE EVENTS'].index[0]
         df.drop(df.index[index-2:],inplace = True)
@@ -115,11 +111,8 @@ def openFile(*args):
         df = pd.read_csv(location,names =['Unnamed 0','Unnamed 1','Unnamed 2','Unnamed 3','Unnamed 4'\
         ,'Unnamed 5','Unnamed 6','Unnamed 7','Unnamed 8','Unnamed 9','Unnamed 10',\
         'Unnamed 11','Unnamed 12','Unnamed 13'])
-        #finds where the headers end
-        df.drop(df.index[:find_start(df)],inplace = True)
-        df.columns = df.iloc[0]
-        df.drop(df.index[0], inplace = True)
-        df = df.reset_index(drop=True)
+        df = resetColName(df)
+
         df['Event Date'] = pd.to_datetime(df['Event Date'])
         df_old =  pd.read_csv('PMpostSched.csv')
         df_old['Event Date'] = pd.to_datetime(df_old['Event Date'])
@@ -190,7 +183,7 @@ start = StringVar()
 end = StringVar()
 
 var.set("one") # initial value
-option = OptionMenu(mainframe, var, 'Choose a Metric to Calculate',"Operations", "Culinary", "Staffing")
+option = OptionMenu(mainframe, var, 'Choose a Metric to Calculate',"Operations", "Culinary", "Staffing","Sales")
 option.grid()
 
 label1 = ttk.Label( mainframe, text="From")
@@ -273,6 +266,47 @@ def CreateMetrics():
         print('percent')
         print(percent)
     elif var.get() == "Sales":
+        df_sales = pd.read_csv('PMRevProj.csv')
+        df_tent = pd.read_csv(glob.glob('Raw\\\\*mecreveprojbyae.csv')[0], names =['Unnamed 0','Unnamed 1','Unnamed 2','Unnamed 3','Unnamed 4'\
+        ,'Unnamed 5','Unnamed 6','Unnamed 7','Unnamed 8','Unnamed 9','Unnamed 10',\
+        'Unnamed 11','Unnamed 12','Unnamed 13','Unnamed 14','Unnamed 15'\
+        ,'Unnamed 16','Unnamed 17','Unnamed 18','Unnamed 19','Unnamed 20','Unnamed 21',
+        'Unnamed 23','Unnamed 24','Unnamed 25','Unnamed 26','Unnamed 27'\
+        ,'Unnamed 28','Unnamed 29','Unnamed 30','Unnamed 31','Unnamed 32','Unnamed 33',\
+        'Unnamed 34','Unnamed 35','Unnamed 36','Unnamed 37','Unnamed 38',\
+        'Unnamed 39','Unnamed 40','Unnamed 41','Unnamed 42','Unnamed 43','Unnamed 44',\
+        'Test 0','Test 1','Test 2','Test 3','Test 4'\
+        ,'Test 5','Test 6','Test 7','Test 8','Test 9','Test 10',\
+        'Test 11','Test 12','Test 13','Test 14','Test 15'\
+        ,'Test 16','Test 17','Test 18','Test 19','Test 20','Test 21',
+        'Test 23','Test 24','Test 25','Test 26','Test 27'\
+        ,'Test 28','Test 29','Last'])
+        df_tent = resetColName(df_tent)
+        df_tent.drop('Discount', axis =1, inplace = True)
+        index = df_tent[df_tent['Event Date'] == 'FOR TENTATIVE EVENTS'].index[0]
+        df_tent.drop(df_tent.index[:index],inplace = True)
+        df_sales['Definite']= pd.to_datetime(df_sales['Definite'])
+        df_tent = df_tent[pd.notnull(df_tent['Event Date'])]
+        df_tent['Event Date'] = pd.to_datetime(df_tent['Event Date'])
+        df_tent[' Subtotal'] = df_tent[' Subtotal'].astype(float)
+        df_sales[' Subtotal'] = df_sales[' Subtotal'].astype(float)
+        today = datetime.now()
+        today = today.replace(day=today.day - 5)
+        offset = (today.weekday() - 2) % 7
+        last_wednesday = today - timedelta(days=offset)
+        #print(df_sales)
+        #Signed Contracts, # and Signed Contracts, $
+        SignedContractsNum = df_sales[df_sales['Definite'].between(last_wednesday,today.replace(year = today.year + 2))][' Subtotal'].count()
+        SignedContractsSum = df_sales[df_sales['Definite'].between(last_wednesday,today.replace(year = today.year + 2))][' Subtotal'].sum()
+        #New $$$ in the Month for the Month
+        NewMonthMoney = df_sales[df_sales['Definite'].between(today.replace(day = 1),\
+        today.replace(day = calendar.monthrange(today.year, today.month)[1]))][' Subtotal'].sum()
+        #Current Month Sales $ / Goal %
+        TentThisMonth = df_tent[df_tent['Event Date'].between(today.replace(day = 1),\
+        today.replace(day = calendar.monthrange(today.year, today.month)[1]))][' Subtotal'].sum()
+        print(NewMonthMoney)
+        print(TentThisMonth)
+        #print(last_wednesday)
     else:
         print('none selected')
 
