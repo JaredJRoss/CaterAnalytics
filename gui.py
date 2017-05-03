@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from dateutil import parser
 import calendar
 import glob
+from dateutil.relativedelta import relativedelta
 
 
 #finds where the headers end for the report
@@ -45,15 +46,15 @@ def CreateMetrics():
     df_temp = pd.DataFrame(columns  = df_metric.columns.values)
     if start.get() == "Pick A Date":
         today = datetime.now()
-        today = today.replace(day=today.day - 5)
+        today = today - dt.timedelta(days=5)
         offset = (today.weekday() - 2) % 7
         start_date = today - timedelta(days=offset)
     else:
-        start_date = start.get()
+        start_date = parser.parse(start.get())
     if end.get() == "Pick A Date":
-        end_date = start_date.replace(day = start_date.day + 6)
+        end_date = start_date + dt.timedelta(days=6)
     else:
-        end_date = end.get()
+        end_date = parser.parse(end.get())
 
     if var.get() == "Operations":
         #read in project revenue csv we created
@@ -98,7 +99,7 @@ def CreateMetrics():
         #gets the current years information only
         temp = df_culin[df_culin['Month'].dt.year==now.year]
         #finds from last 3 months and this one
-        curr = temp[temp['Month'].between(now.replace(month = now.month-3 ),now)]
+        curr = temp[temp['Month'].between(now - relativedelta(months = 3),now)]
         #calculate percents
         signed = curr['Unsign Number'].sum()
         lost = curr['Unsign Signed'].sum()
@@ -207,16 +208,17 @@ def CreateMetrics():
         print(NewMonthMoney)
         print(TentThisMonth)
         #Next month and Tenative
-        NextMonthMoney = df_sales[df_sales['Definite'].between(start_date.replace(day = 1, month = start_date.month + 1),\
-        start_date.replace(day = calendar.monthrange(start_date.year, start_date.month)[1], month = start_date.month + 1))][' Subtotal'].sum()
-        TentNextMonth = df_tent[df_tent['Event Date'].between(start_date.replace(day = 1, month = start_date.month +1),\
-                start_date.replace(day = calendar.monthrange(start_date.year, start_date.month)[1], month = start_date.month + 1))][' Subtotal'].sum()
-
+        start_date1 = start_date + relativedelta(months =1)
+        NextMonthMoney = df_sales[df_sales['Definite'].between(start_date1.replace(day = 1),\
+        start_date1.replace(day = calendar.monthrange(start_date1.year, start_date1.month)[1]))][' Subtotal'].sum()
+        TentNextMonth = df_tent[df_tent['Event Date'].between(start_date1.replace(day = 1),\
+                start_date1.replace(day = calendar.monthrange(start_date1.year, start_date1.month)[1]))][' Subtotal'].sum()
+        start_date2 = start_date + relativedelta(months =2)
         #2 months ahead and Tentative
-        TwoMonthMoney = df_sales[df_sales['Definite'].between(start_date.replace(day = 1, month = start_date.month + 2),\
-        start_date.replace(day = calendar.monthrange(start_date.year, start_date.month)[1], month = start_date.month + 2))][' Subtotal'].sum()
-        TentTwoMonth = df_tent[df_tent['Event Date'].between(start_date.replace(day = 1, month = start_date.month +2),\
-                start_date.replace(day = calendar.monthrange(start_date.year, start_date.month)[1], month = start_date.month + 2))][' Subtotal'].sum()
+        TwoMonthMoney = df_sales[df_sales['Definite'].between(start_date2.replace(day = 1),\
+        start_date2.replace(day = calendar.monthrange(start_date2.year, start_date2.month)[1]))][' Subtotal'].sum()
+        TentTwoMonth = df_tent[df_tent['Event Date'].between(start_date2.replace(day = 1),\
+                start_date2.replace(day = calendar.monthrange(start_date2.year, start_date2.month)[1]))][' Subtotal'].sum()
 
         if df_metric[(df_metric['From'].dt.date == start_date.date()) & (df_metric['To'].dt.date == end_date.date())].empty:
             df_temp.loc[0,'From'] = start_date.date()
@@ -392,6 +394,18 @@ def openFile(*args):
         df = df.combine_first(df_old)
         df.to_csv('Tasting.csv' ,index=False)
 
+
+def function():
+    selection = var1.get()
+
+    if  (selection == 1):
+        var.set("Operations")
+
+    elif (selection == 2):
+        var.set("Culinary")
+
+    else:
+        var.set("Staffing")
 
 #GUI
 root = Tk()
